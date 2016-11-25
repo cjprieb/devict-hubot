@@ -20,18 +20,19 @@
 # Author:
 #   kyleslattery
 module.exports = (robot) ->
-  robot.respond /weather ?(.+)?/i, (msg) ->
+  robot.respond /weather ?(.+)?( on (mon|tue|wed|thu|fri|sat|sun)day)?/i, (msg) ->
     location = msg.match[1] || process.env.HUBOT_DARK_SKY_DEFAULT_LOCATION
-    dayOfWeek = msg.match[2];
+    dayOfWeek = msg.match[3];
     return if not location
 
     if location == "about"
-      msg.send "<https://darksky.net/poweredby/>|Powered by Darksky>"
+      msg.send "<https://darksky.net/poweredby/|Powered by Darksky>"
     else if location == "help"
       response = "Commands\n";
       response += "`bot weather` - Get the weather for the default location\n";
       response += "`bot weather <location>` - Get the weather for <location>\n";
       response += "`bot weather about` - About the DarkSky API\n";
+      response += "day of week text: #{dayOfWeek}";
       msg.send response
     else 
       googleurl = "http://maps.googleapis.com/maps/api/geocode/json"
@@ -78,11 +79,19 @@ darkSkyMe = (msg, lat, lng, dayOfWeek, callback) ->
       response += "#{celsius}°C).\n"
 
       if dateToGet
-        response += "#Weather for {dayOfWeek}: #{result.hourly.summary}"
+        formattedDate = parseTime result.hourly.time
+        response += "#Weather for #{formattedDate}: #{result.hourly.summary}"
       else      
         response += "Today: #{result.hourly.summary}\n"
         response += "Coming week: #{result.daily.summary}"
       callback response
 
 getDate = (dayOfWeek) ->
-  return "+2400"
+  if dayOfWeek
+    #dayOfWeek = dayOfWeek.toLower    
+    return "+2400"
+  else 
+    return null;
+
+parseTime = (unixTime) ->
+  return new Date(unixTime)
