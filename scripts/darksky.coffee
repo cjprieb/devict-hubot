@@ -40,7 +40,7 @@ module.exports = (robot) ->
           msg.send "Couldn't find #{location}"
 
 darkSkyMe = (msg, lat, lng, cb) ->
-  url = "https://darksky.net/forecast/{lat},{lng}/us12/en"
+  url = "https://api.darksky.net/forecast/#{process.env.HUBOT_DARK_SKY_API_KEY}/#{lat},#{lng}"
   if process.env.HUBOT_DARK_SKY_UNITS
     url += "?units=#{process.env.HUBOT_DARK_SKY_UNITS}"
   msg.http(url)
