@@ -1,5 +1,6 @@
 # Description
-#   Grabs the current forecast from Dark Sky
+#   Grabs the current forecast from Dark Sky.
+#   Powered by Dark Sky: https://darksky.net/poweredby/
 #
 # Dependencies
 #   None
@@ -19,28 +20,41 @@
 # Author:
 #   kyleslattery
 module.exports = (robot) ->
-  robot.respond /weather ?(.+)?/i, (msg) ->
+  robot.respond /weather ?(.+)? ?on ?(\w+)?/i, (msg) ->
     location = msg.match[1] || process.env.HUBOT_DARK_SKY_DEFAULT_LOCATION
+    dayOfWeek = msg.match[2];
     return if not location
 
-    googleurl = "http://maps.googleapis.com/maps/api/geocode/json"
-    q = sensor: false, address: location
-    msg.http(googleurl)
-      .query(q)
-      .get() (err, res, body) ->
-        result = JSON.parse(body)
+    if location == "about"
+      msg.send "<https://darksky.net/poweredby/>|Powered by Darksky>"
+    else if location == "help"
+      response = "Commands\n";
+      response += "`bot weather` - Get the weather for the default location\n";
+      response += "`bot weather <location>` - Get the weather for <location>\n";
+      response += "`bot weather about` - About the DarkSky API\n";
+      msg.send response
+    else 
+      googleurl = "http://maps.googleapis.com/maps/api/geocode/json"
+      q = sensor: false, address: location
+      msg.http(googleurl)
+        .query(q)
+        .get() (err, res, body) ->
+          result = JSON.parse(body)
 
-        if result.results.length > 0
-          lat = result.results[0].geometry.location.lat
-          lng = result.results[0].geometry.location.lng
-          darkSkyMe msg, lat,lng , (darkSkyText) ->
-            response = "Weather for #{result.results[0].formatted_address}. #{darkSkyText}"
-            msg.send response
-        else
-          msg.send "Couldn't find #{location}"
+          if result.results.length > 0
+            lat = result.results[0].geometry.location.lat
+            lng = result.results[0].geometry.location.lng
+            darkSkyMe msg, lat, lng, dayOfWeek, (darkSkyText) ->
+              response = "Weather for #{result.results[0].formatted_address}. #{darkSkyText}"
+              msg.send response
+          else
+            msg.send "Couldn't find #{location}"
 
-darkSkyMe = (msg, lat, lng, cb) ->
+darkSkyMe = (msg, lat, lng, dayOfWeek, callback) ->
   url = "https://api.darksky.net/forecast/#{process.env.HUBOT_DARK_SKY_API_KEY}/#{lat},#{lng}"
+  dateToGet = getDate dayOfWeek
+  if dateToGet
+    url += "," + dateToGet
   if process.env.HUBOT_DARK_SKY_UNITS
     url += "?units=#{process.env.HUBOT_DARK_SKY_UNITS}"
   msg.http(url)
@@ -48,7 +62,7 @@ darkSkyMe = (msg, lat, lng, cb) ->
       result = JSON.parse(body)
 
       if result.error
-        cb "#{result.error}"
+        callback "#{result.error}"
         return
 
       isFahrenheit = process.env.HUBOT_DARK_SKY_UNITS == "us"
@@ -61,7 +75,14 @@ darkSkyMe = (msg, lat, lng, cb) ->
         fahrenheit = celsius * (9 / 5) + 32
         fahrenheit = fahrenheit.toFixed(2)
       response = "Currently: #{result.currently.summary} (#{fahrenheit}°F/"
-      response += "#{celsius}°C). "
-      response += "Today: #{result.hourly.summary} "
-      response += "Coming week: #{result.daily.summary}"
-      cb response
+      response += "#{celsius}°C).\n"
+
+      if dateToGet
+        response += "#Weather for {dayOfWeek}: #{result.hourly.summary}"
+      else      
+        response += "Today: #{result.hourly.summary}\n"
+        response += "Coming week: #{result.daily.summary}"
+      callback response
+
+getDate = (dayOfWeek) ->
+  return dayOfWeek == "Sunday" : "+2400"
