@@ -20,7 +20,7 @@
 # Author:
 #   kyleslattery
 module.exports = (robot) ->
-  robot.respond /weather ?(.+)? ?on ?(\w+)?/i, (msg) ->
+  robot.respond /weather ?(.+)?/i, (msg) ->
     location = msg.match[1] || process.env.HUBOT_DARK_SKY_DEFAULT_LOCATION
     dayOfWeek = msg.match[2];
     return if not location
@@ -85,4 +85,4 @@ darkSkyMe = (msg, lat, lng, dayOfWeek, callback) ->
       callback response
 
 getDate = (dayOfWeek) ->
-  return dayOfWeek == "Sunday" : "+2400"
+  return "+2400"
