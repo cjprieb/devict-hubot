@@ -1,5 +1,5 @@
 // Description:
-//   Some automatic responses to common / semi-common sayings.
+//   Adds reaction emoji to common / semi-common sayings.
 //
 // Dependencies:
 //   None
@@ -8,9 +8,10 @@
 //   None
 //
 // Commands:
-//   look at (this|that|it) - "look at that" guy
-//   so good - bot agrees
-
+//   None - all should be listeners that add reaction emoji.
+//
+// TODO: refactor/rename to reaction.js
+//
 // optOutUsers is a list of users who do not find value in hubot's
 // helpful responses.
 var optOutUsers = [
@@ -31,12 +32,21 @@ module.exports = function(robot) {
     });
   });
 
-  robot.hear(/look at (this|that|it)/i, function(msg) {
+  robot.hear(/\blook at (this|that|it)\b/i, function(msg) {
     if (shouldAbort(msg)) { return; }
 
     robot.emit('slack.reaction', {
         message: msg.message,
         name: "look-at-that"
+    });
+  });
+  
+  robot.hear(/\b(neat|nature|neature|aspen)\b/i, function(msg) {
+    if (shouldAbort(msg)) { return; }
+
+    robot.emit('slack.reaction', {
+        message: msg.message,
+        name: "neature"
     });
   });
 
